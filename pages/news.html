@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青山自治會 - 最新消息</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/news.css">
+    <link rel="icon" href="/static/images/favicon.png" type="image/png">
+</head>
+<body>
+    <header>
+        <a href="/">
+            <img src="/static/images/logo.png" alt="青山自治會" class="logo">
+        </a>
+        <h1 style="text-align: center;">青山自治會</h1>
+    </header>
+
+    <div class="navbar">
+        <a href="/">首頁</a>
+        <a href="/news">最新消息</a>
+        <a href="/events">活動公告</a>
+        <a href="/feedback">意見回饋</a>
+        <a href="/about">關於我們</a>
+        <a href="/contact">聯絡我們</a>
+    </div>
+
+    <div class="content">
+        <h1>最新消息</h1>
+        <hr>
+    </div>
+</body>
+</html>
+
+<script>
+    // Fetch news data from the API and display it
+    fetch('/api/news')
+        .then(response => response.json())
+        .then(data => {
+            const contentDiv = document.querySelector('.content');
+            data.forEach(newsItem => {
+                const newsElement = document.createElement('a');
+                newsElement.href = `/news/${newsItem.id}`;
+                newsElement.classList.add('item');
+                newsElement.innerHTML = `
+                    <h2>${newsItem.title}</h2>
+                    <p>${newsItem.date}</p>
+                    <p>${newsItem.summary}</p>
+                `;
+                contentDiv.appendChild(newsElement);
+            });
+            if (data.length === 0) {
+                const noNewsElement = document.createElement('p');
+                noNewsElement.textContent = '目前沒有最新消息。';
+                contentDiv.appendChild(noNewsElement);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching news:', error);
+            const contentDiv = document.querySelector('.content');
+            const errorElement = document.createElement('p');
+            errorElement.textContent = '無法載入最新消息，請稍後再試。';
+            contentDiv.appendChild(errorElement);
+        });
+</script>

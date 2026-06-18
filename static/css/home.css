@@ -1,5 +1,4 @@
 .content {
-    flex: 1;
     display: flex;
     div {
         display: flex;
@@ -37,27 +36,19 @@
                     background-color: #1a5;
                     transform: translateY(-5px);
                 }
+                h2 {
+                    margin: 10px 0;
+                }
+                p {
+                    margin: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 1; /* number of lines to show */
+                    -webkit-box-orient: vertical;
+                }
             }
         }
-        a.more-link {
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            margin: 0 auto;
-            background-color: #114514;
-            border-radius: 4px;
-            transition: background-color 0.3s, transform 0.3s;
-            &:hover {
-                background-color: #1a5;
-                transform: translateY(-3px);
-            }
-        }
-    }
-    #news {
-        background-color: #f0f0f0;
-    }
-    #events {
-        background-color: #e0e0e0;
     }
     h1 {
         text-align: center;

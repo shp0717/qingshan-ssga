@@ -1,0 +1,14 @@
+.content {
+    padding: 30px;
+    h1 {
+        text-align: center;
+        color: #114514;
+        margin-bottom: 20px;
+    }
+    hr {
+        width: 100%;
+        border: 0;
+        border-top: 1px solid #114514;
+        margin: 20px 0;
+    }
+}

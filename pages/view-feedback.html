@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>頁面未正確載入</title> <!-- Will be dynamically updated by JavaScript -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/view-feedback.css">
+    <link rel="icon" href="/static/images/favicon.png" type="image/png">
+</head>
+<body>
+    <header>
+        <a href="/">
+            <img src="/static/images/logo.png" alt="青山自治會" class="logo">
+        </a>
+        <h1 style="text-align: center;">青山自治會</h1>
+    </header>
+
+    <div class="navbar">
+        <a href="/">首頁</a>
+        <a href="/news">最新消息</a>
+        <a href="/events">活動公告</a>
+        <a href="/feedback">意見回饋</a>
+        <a href="/about">關於我們</a>
+        <a href="/contact">聯絡我們</a>
+    </div>
+
+    <div class="content">
+        <p id="author-and-date"></p> <!-- Dynamically loaded by JavaScript -->
+        <h1 id="feedback-title"></h1> <!-- Dynamically loaded by JavaScript -->
+        <hr>
+        <div id="feedback-message"></div> <!-- Dynamically loaded by JavaScript -->
+        <div id="feedback-replies"> <!-- Dynamically loaded by JavaScript -->
+            <div id="new-reply" class="reply">
+                <form id="reply-form">
+                    <input type="text" id="reply-name" name="name" placeholder="您的名字" required>
+                    <textarea id="reply-message" name="message" placeholder="您的回覆內容" required></textarea>
+                    <button type="submit">提交回覆</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+    // Extract feedback ID from GET parameter
+    const feedbackId = new URLSearchParams(window.location.search).get('id');
+
+    // Fetch feedback data from the API
+    fetch(`/api/feedbacks`)
+        .then(response => response.json())
+        .then(dataArray => {
+            console.log('Fetched feedbacks:', dataArray);
+            const data = dataArray.find(item => item.id === parseInt(feedbackId));
+            if (data) {
+                document.title = `青山自治會 - 查看意見回饋 - ${data.title}`;
+                document.getElementById('feedback-title').textContent = data.title;
+                document.getElementById('author-and-date').textContent = `${data.name} - ${new Date(data.date).toLocaleString()}`;
+                document.getElementById('feedback-message').textContent = data.message;
+
+                const repliesContainer = document.getElementById('feedback-replies');
+                data.replies.sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort replies by date
+                data.replies.forEach(reply => {
+                    const replyDiv = document.createElement('div');
+                    replyDiv.className = 'reply';
+                    const nameP = document.createElement('p');
+                    nameP.className = 'reply-name';
+                    nameP.textContent = reply.name;
+                    const messageP = document.createElement('p');
+                    messageP.className = 'reply-message';
+                    messageP.textContent = reply.message;
+                    replyDiv.appendChild(nameP);
+                    replyDiv.appendChild(messageP);
+                    repliesContainer.appendChild(replyDiv);
+                });
+            } else {
+                document.getElementById('feedback-title').textContent = '意見回饋不存在';
+                document.getElementById('author-and-date').textContent = '';
+                document.getElementById('feedback-replies').style.display = 'none';
+                document.getElementById('feedback-message').textContent = '找不到該意見回饋。';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching feedback:', error);
+            document.getElementById('feedback-title').textContent = '無法載入意見回饋';
+            document.getElementById('author-and-date').textContent = '';
+            document.getElementById('feedback-replies').style.display = 'none';
+            document.getElementById('feedback-message').textContent = '請稍後再試。';
+        });
+
+    // Handle new reply submission
+    document.getElementById('reply-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const name = document.getElementById('reply-name').value;
+        const message = document.getElementById('reply-message').value;
+        fetch(`/api/post-reply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: parseInt(feedbackId),
+                name: name,
+                message: message
+            })
+        })
+        .then(response => {
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error submitting reply:', error);
+            alert('提交回覆失敗，請稍後再試。');
+        });
+    });
+</script>

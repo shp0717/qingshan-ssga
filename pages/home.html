@@ -28,16 +28,12 @@
     <div class="content">
         <div id="news">
             <h1>最新消息</h1>
-            <div id="news-flexbox" class="flexbox">
-            </div>
-            <a href="/news" class="more-link">查看更多最新消息</a>
+            <div id="news-flexbox" class="flexbox"></div>
         </div>
 
         <div id="events">
             <h1>活動公告</h1>
-            <div id="events-flexbox" class="flexbox">
-            </div>
-            <a href="/events" class="more-link">查看更多活動公告</a>
+            <div id="events-flexbox" class="flexbox"></div>
         </div>
     </div>
 </body>
@@ -55,18 +51,18 @@
             if (data.length === 0) {
                 newsFlexbox.innerHTML = '<a class="item">目前沒有最新消息。</a>';
                 return;
-            } else if (data.length > 3) {
-                data = data.slice(0, 3);
             }
             data.forEach(async item => {
                 await waitSecond(0.5);
                 const newsItem = document.createElement('a');
+                const title = document.createElement('h2');
+                const summary = document.createElement('p');
+                title.textContent = item.title;
+                summary.textContent = item.summary;
+                newsItem.appendChild(title);
+                newsItem.appendChild(summary);
                 newsItem.className = 'item';
                 newsItem.href = `/news/${item.id}`;
-                newsItem.innerHTML = `
-                    <h2>${item.title}</h2>
-                    <p>${item.summary}</p>
-                `;
                 newsFlexbox.appendChild(newsItem);
             });
         })
@@ -83,18 +79,18 @@
             if (data.length === 0) {
                 eventsFlexbox.innerHTML = '<a class="item">目前沒有活動公告。</a>';
                 return;
-            } else if (data.length > 3) {
-                data = data.slice(0, 3);
             }
             data.forEach(async item => {
                 await waitSecond(0.5);
                 const eventItem = document.createElement('a');
+                const title = document.createElement('h2');
+                const summary = document.createElement('p');
+                title.textContent = item.title;
+                summary.textContent = item.summary;
+                eventItem.appendChild(title);
+                eventItem.appendChild(summary);
                 eventItem.className = 'item';
                 eventItem.href = `/events/${item.id}`;
-                eventItem.innerHTML = `
-                    <h2>${item.title}</h2>
-                    <p>${item.summary}</p>
-                `;
                 eventsFlexbox.appendChild(eventItem);
             });
         })
