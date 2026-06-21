@@ -33,9 +33,11 @@
         <div id="feedback-replies"> <!-- Dynamically loaded by JavaScript -->
             <div id="new-reply" class="reply">
                 <form id="reply-form">
-                    <input type="text" id="reply-name" name="name" placeholder="您的名字" required>
+                    <span class="line-1">
+                        <input type="text" id="reply-name" name="name" placeholder="您的名字" required>
+                        <button type="submit">提交回覆</button>
+                    </span>
                     <textarea id="reply-message" name="message" placeholder="您的回覆內容" required></textarea>
-                    <button type="submit">提交回覆</button>
                 </form>
             </div>
         </div>
@@ -60,7 +62,7 @@
                 document.getElementById('feedback-message').textContent = data.message;
 
                 const repliesContainer = document.getElementById('feedback-replies');
-                data.replies.sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort replies by date
+                data.replies.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort replies by date
                 data.replies.forEach(reply => {
                     const replyDiv = document.createElement('div');
                     replyDiv.className = 'reply';

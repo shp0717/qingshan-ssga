@@ -8,33 +8,21 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"strconv"
+	"crypto/sha256"
 )
 
-var feedbackFilePath = func() string {
+var execDir = func() string {
 	exec, err := os.Executable()
 	if err != nil {
-		fmt.Printf("\033[31m[ERROR] Failed to get executable path: %v\033[0m\n", err)
-		return "feedback.json" // fallback to current directory
+		panic(fmt.Sprintf("Failed to get executable path: %v", err))
 	}
-	path := filepath.Join(filepath.Dir(exec), "data/feedback.json")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		// Create an empty feedback file if it doesn't exist
-		err := os.MkdirAll(filepath.Dir(path), 0755)
-		if err != nil {
-			fmt.Printf("\033[31m[ERROR] Failed to create directories for feedback file: %v\033[0m\n", err)
-			return "feedback.json" // fallback to current directory
-		}
-		err = os.WriteFile(path, []byte("[]"), 0644)
-		if err != nil {
-			fmt.Printf("\033[31m[ERROR] Failed to create feedback file: %v\033[0m\n", err)
-			return "feedback.json" // fallback to current directory
-		}
-	}
-	return path
+	return filepath.Dir(exec)
 }()
 
+var feedbackFilePath = filepath.Join(execDir, "data", "feedbacks.json")
+
 type Reply struct {
+	ID      int    `json:"id"`
 	Name    string `json:"name"`
 	Message string `json:"message"`
 	Date    string `json:"date"`
@@ -49,31 +37,31 @@ type Feedback struct {
 	Replies []Reply `json:"replies"`
 }
 
-type feedbackRequest struct {
+type FeedbackRequest struct {
 	Name    string `json:"name"`
 	Title   string `json:"title"`
 	Message string `json:"message"`
 }
 
-type replyRequest struct {
+type ReplyRequest struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
 	Message string `json:"message"`
 }
 
-func decodeFeedbackRequest(r *http.Request) (feedbackRequest, error) {
-	var request feedbackRequest
+func decodeFeedbackRequest(r *http.Request) (FeedbackRequest, error) {
+	var request FeedbackRequest
 
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		defer r.Body.Close()
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			return feedbackRequest{}, err
+			return FeedbackRequest{}, err
 		}
 		return request, nil
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return feedbackRequest{}, err
+		return FeedbackRequest{}, err
 	}
 
 	request.Name = r.FormValue("name")
@@ -82,24 +70,30 @@ func decodeFeedbackRequest(r *http.Request) (feedbackRequest, error) {
 	return request, nil
 }
 
-func decodeReplyRequest(r *http.Request) (replyRequest, error) {
-	var request replyRequest
+func decodeReplyRequest(r *http.Request) (ReplyRequest, error) {
+	var request ReplyRequest
 
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		defer r.Body.Close()
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			return replyRequest{}, err
+			return ReplyRequest{}, err
 		}
 		return request, nil
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return replyRequest{}, err
+		return ReplyRequest{}, err
 	}
 
-	id, err := strconv.Atoi(r.FormValue("id"))
+	// id, err := strconv.Atoi(r.FormValue("id"))
+	// if err != nil {
+	// 	return ReplyRequest{}, err
+	// }
+	var id int
+	idStr := r.FormValue("id")
+	_, err := fmt.Sscanf(idStr, "%d", &id)
 	if err != nil {
-		return replyRequest{}, err
+		return ReplyRequest{}, err
 	}
 	request.ID = id
 	request.Name = r.FormValue("name")
@@ -118,7 +112,8 @@ func NewsApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newsData, err := Static.ReadFile("static/data/news.json")
+	// newsData, err := Static.ReadFile("static/data/news.json")
+	newsData, err := os.ReadFile(filepath.Join(execDir, "data", "news.json"))
 	if err != nil {
 		http.Error(w, "Could not load news data", http.StatusInternalServerError)
 		fmt.Printf("\033[31m[ERROR] Failed to read news data: %v\033[0m\n", err)
@@ -136,7 +131,8 @@ func EventApiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventData, err := Static.ReadFile("static/data/events.json")
+	// eventData, err := Static.ReadFile("static/data/events.json")
+	eventData, err := os.ReadFile(filepath.Join(execDir, "data", "events.json"))
 	if err != nil {
 		http.Error(w, "Could not load event data", http.StatusInternalServerError)
 		fmt.Printf("\033[31m[ERROR] Failed to read event data: %v\033[0m\n", err)
@@ -258,6 +254,7 @@ func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
 	for i, fb := range feedbacks {
 		if fb.ID == feedbackID {
 			reply := Reply{
+				ID:      len(fb.Replies) + 1,
 				Name:    name,
 				Message: message,
 				Date:    time.Now().UTC().Format(time.RFC3339),
@@ -303,4 +300,180 @@ func GetFeedbacksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(feedbacksJSON)
 	fmt.Println("[INFO] Feedbacks API accessed")
+}
+
+func VerifySecretPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		Password string `json:"password"`
+	}
+
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		fmt.Printf("\033[31m[ERROR] Failed to parse JSON data: %v\033[0m\n", err)
+		return
+	}
+
+	hashedInput := fmt.Sprintf("%x", sha256.Sum256([]byte(request.Password)))
+	expectedHash := "3afa2aac62dd41a878a70969eecab3b24f0b01d38e4a09739088596b6757e990"
+
+	if hashedInput == expectedHash {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"success": true}`))
+		fmt.Println("[INFO] Secret password verified successfully")
+	} else {
+		http.Error(w, "Incorrect password", http.StatusUnauthorized)
+		fmt.Println("\033[31m[ERROR] Incorrect secret password attempt\033[0m")
+	}
+}
+
+func SecretCommandHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request map[string]string
+
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		fmt.Printf("\033[31m[ERROR] Failed to parse JSON data: %v\033[0m\n", err)
+		return
+	}
+
+	command, exists := request["command"]
+	if !exists {
+		http.Error(w, "Command not provided", http.StatusBadRequest)
+		fmt.Println("\033[31m[ERROR] Secret command not provided in request\033[0m")
+		return
+	}
+
+	switch command {
+	case "delete_feedback":
+		idStr, exists := request["feedback_id"]
+		if !exists {
+			http.Error(w, "ID not provided for delete_feedback command", http.StatusBadRequest)
+			fmt.Println("\033[31m[ERROR] ID not provided for delete_feedback command\033[0m")
+			return
+		}
+
+		feedbacksJSON, err := os.ReadFile(feedbackFilePath)
+		if err != nil {
+			http.Error(w, "Failed to read feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to read feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		var feedbacks []Feedback
+		err = json.Unmarshal(feedbacksJSON, &feedbacks)
+		if err != nil {
+			http.Error(w, "Failed to parse feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to parse feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		found := false
+		for i, fb := range feedbacks {
+			if fmt.Sprintf("%d", fb.ID) == idStr {
+				feedbacks = append(feedbacks[:i], feedbacks[i+1:]...)
+				found = true
+				break
+			}
+		}
+		if !found {
+			http.Error(w, "Feedback not found", http.StatusNotFound)
+			fmt.Printf("\033[31m[ERROR] Feedback not found for ID: %s\033[0m\n", idStr)
+			return
+		}
+
+		newFeedbacksJSON, err := json.Marshal(feedbacks)
+		if err != nil {
+			http.Error(w, "Failed to encode feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to encode feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		err = os.WriteFile(feedbackFilePath, newFeedbacksJSON, 0644)
+		if err != nil {
+			http.Error(w, "Failed to save feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to save feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Println("[INFO] Feedback deleted successfully")
+	case "delete_reply":
+		feedbackIDStr, exists := request["feedback_id"]
+		if !exists {
+			http.Error(w, "Feedback ID not provided for delete_reply command", http.StatusBadRequest)
+			fmt.Println("\033[31m[ERROR] Feedback ID not provided for delete_reply command\033[0m")
+			return
+		}
+		replyIDStr, exists := request["reply_id"]
+		if !exists {
+			http.Error(w, "Reply ID not provided for delete_reply command", http.StatusBadRequest)
+			fmt.Println("\033[31m[ERROR] Reply ID not provided for delete_reply command\033[0m")
+			return
+		}
+
+		feedbacksJSON, err := os.ReadFile(feedbackFilePath)
+		if err != nil {
+			http.Error(w, "Failed to read feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to read feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		var feedbacks []Feedback
+		err = json.Unmarshal(feedbacksJSON, &feedbacks)
+		if err != nil {
+			http.Error(w, "Failed to parse feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to parse feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		found := false
+		for i, fb := range feedbacks {
+			if fmt.Sprintf("%d", fb.ID) == feedbackIDStr {
+				for j, rp := range fb.Replies {
+					if fmt.Sprintf("%d", rp.ID) == replyIDStr {
+						feedbacks[i].Replies = append(feedbacks[i].Replies[:j], feedbacks[i].Replies[j+1:]...)
+						found = true
+						break
+					}
+				}
+				break
+			}
+		}
+		if !found {
+			http.Error(w, "Feedback or reply not found", http.StatusNotFound)
+			fmt.Printf("\033[31m[ERROR] Feedback or reply not found for Feedback ID: %s, Reply ID: %s\033[0m\n", feedbackIDStr, replyIDStr)
+			return
+		}
+
+		newFeedbacksJSON, err := json.Marshal(feedbacks)
+		if err != nil {
+			http.Error(w, "Failed to encode feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to encode feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		err = os.WriteFile(feedbackFilePath, newFeedbacksJSON, 0644)
+		if err != nil {
+			http.Error(w, "Failed to save feedback data", http.StatusInternalServerError)
+			fmt.Printf("\033[31m[ERROR] Failed to save feedback data: %v\033[0m\n", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Println("[INFO] Reply deleted successfully")
+	default:
+		http.Error(w, "Unknown command", http.StatusBadRequest)
+		fmt.Printf("\033[31m[ERROR] Unknown secret command: %s\033[0m\n", command)
+	}
 }

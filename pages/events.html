@@ -38,15 +38,17 @@
         .then(response => response.json())
         .then(data => {
             const contentDiv = document.querySelector('.content');
+            data.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort events by date descending
             data.forEach(eventItem => {
                 const eventElement = document.createElement('a');
                 eventElement.href = `/events/${eventItem.id}`;
                 eventElement.classList.add('item');
-                eventElement.innerHTML = `
-                    <h2>${eventItem.title}</h2>
-                    <p>${eventItem.date}</p>
-                    <p>${eventItem.summary}</p>
-                `;
+                const titleElement = document.createElement('h2');
+                titleElement.textContent = eventItem.title;
+                const summaryElement = document.createElement('p');
+                summaryElement.textContent = eventItem.summary;
+                eventElement.appendChild(titleElement);
+                eventElement.appendChild(summaryElement);
                 contentDiv.appendChild(eventElement);
             });
             if (data.length === 0) {

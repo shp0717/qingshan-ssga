@@ -38,15 +38,17 @@
         .then(response => response.json())
         .then(data => {
             const contentDiv = document.querySelector('.content');
+            data.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort news by date descending
             data.forEach(newsItem => {
                 const newsElement = document.createElement('a');
                 newsElement.href = `/news/${newsItem.id}`;
                 newsElement.classList.add('item');
-                newsElement.innerHTML = `
-                    <h2>${newsItem.title}</h2>
-                    <p>${newsItem.date}</p>
-                    <p>${newsItem.summary}</p>
-                `;
+                const titleElement = document.createElement('h2');
+                titleElement.textContent = newsItem.title;
+                const summaryElement = document.createElement('p');
+                summaryElement.textContent = newsItem.summary;
+                newsElement.appendChild(titleElement);
+                newsElement.appendChild(summaryElement);
                 contentDiv.appendChild(newsElement);
             });
             if (data.length === 0) {

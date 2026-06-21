@@ -9,7 +9,8 @@
 
 @font-face {
     font-family: "Title-Font";
-    src: url("/static/fonts/title-font.ttf") format("truetype");
+    // src: url("/static/fonts/title-font.ttf") format("truetype");
+    src: url("/static/fonts/title-font-subset.woff2") format("woff2");
     font-weight: normal;
     font-style: normal;
 }
@@ -59,6 +60,11 @@ header {
                 opacity: 1;
                 clip-path: inset(0 0 0 0);
             }
+        }
+        &::before {
+            content: '▼';
+            opacity: 0;
+            margin-right: 5px;
         }
         &::after {
             content: '▼';

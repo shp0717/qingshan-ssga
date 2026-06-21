@@ -40,10 +40,6 @@
 </html>
 
 <script>
-    function waitSecond(seconds) {
-        return new Promise(resolve => setTimeout(resolve, seconds * 1000));
-    }
-
     fetch('/api/news')
         .then(response => response.json())
         .then(data => {
@@ -52,8 +48,8 @@
                 newsFlexbox.innerHTML = '<a class="item">目前沒有最新消息。</a>';
                 return;
             }
-            data.forEach(async item => {
-                await waitSecond(0.5);
+            data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            data.forEach(item => {
                 const newsItem = document.createElement('a');
                 const title = document.createElement('h2');
                 const summary = document.createElement('p');
@@ -80,8 +76,8 @@
                 eventsFlexbox.innerHTML = '<a class="item">目前沒有活動公告。</a>';
                 return;
             }
-            data.forEach(async item => {
-                await waitSecond(0.5);
+            data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            data.forEach(item => {
                 const eventItem = document.createElement('a');
                 const title = document.createElement('h2');
                 const summary = document.createElement('p');
