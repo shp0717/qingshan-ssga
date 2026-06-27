@@ -23,6 +23,7 @@ var feedbackFilePath = filepath.Join(execDir, "data", "feedbacks.json")
 
 type Reply struct {
 	ID      int    `json:"id"`
+	IP	    string `json:"ip"`
 	Name    string `json:"name"`
 	Message string `json:"message"`
 	Date    string `json:"date"`
@@ -30,6 +31,7 @@ type Reply struct {
 
 type Feedback struct {
 	ID      int     `json:"id"`
+	IP      string  `json:"ip"`
 	Name    string  `json:"name"`
 	Title   string  `json:"title"`
 	Message string  `json:"message"`
@@ -136,6 +138,10 @@ func PostFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
 	name := strings.TrimSpace(request.Name)
 	title := strings.TrimSpace(request.Title)
 	message := strings.TrimSpace(request.Message)
@@ -166,6 +172,7 @@ func PostFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	feedback := Feedback{
 		ID:      len(feedbacks) + 1,
+		IP:      ip,
 		Name:    name,
 		Title:   title,
 		Message: message,
@@ -190,7 +197,7 @@ func PostFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Println("[INFO] Feedback received and saved")
+	fmt.Printf("[INFO] Feedback received and saved from IP: %s\n", ip)
 }
 
 func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
@@ -201,6 +208,10 @@ func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
 	feedbackID := request.ID
 	name := strings.TrimSpace(request.Name)
 	message := strings.TrimSpace(request.Message)
@@ -229,6 +240,7 @@ func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
 		if fb.ID == feedbackID {
 			reply := Reply{
 				ID:      len(fb.Replies) + 1,
+				IP:      ip,
 				Name:    name,
 				Message: message,
 				Date:    time.Now().UTC().Format(time.RFC3339),
@@ -250,7 +262,7 @@ func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.WriteHeader(http.StatusOK)
-			fmt.Println("[INFO] Reply added to feedback")
+			fmt.Printf("[INFO] Reply added to feedback from IP: %s\n", ip)
 			return
 		}
 	}
@@ -276,6 +288,12 @@ func GetFeedbacksHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("[INFO] Feedbacks API accessed")
 }
 
+func verifySecretPassword(password string) bool {
+	hashedInput := fmt.Sprintf("%x", sha256.Sum256([]byte(password)))
+	expectedHash := "3afa2aac62dd41a878a70969eecab3b24f0b01d38e4a09739088596b6757e990"
+	return hashedInput == expectedHash
+}
+
 func VerifySecretPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		Password string `json:"password"`
@@ -288,10 +306,7 @@ func VerifySecretPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedInput := fmt.Sprintf("%x", sha256.Sum256([]byte(request.Password)))
-	expectedHash := "3afa2aac62dd41a878a70969eecab3b24f0b01d38e4a09739088596b6757e990"
-
-	if hashedInput == expectedHash {
+	if verifySecretPassword(request.Password) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true}`))
 		fmt.Println("[INFO] Secret password verified successfully")
@@ -356,7 +371,7 @@ func SecretCommandHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		newFeedbacksJSON, err := json.Marshal(feedbacks)
+		newFeedbacksJSON, err := json.MarshalIndent(feedbacks, "", "  ")
 		if err != nil {
 			http.Error(w, "Failed to encode feedback data", http.StatusInternalServerError)
 			fmt.Printf("\033[31m[ERROR] Failed to encode feedback data: %v\033[0m\n", err)
@@ -420,7 +435,7 @@ func SecretCommandHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		newFeedbacksJSON, err := json.Marshal(feedbacks)
+		newFeedbacksJSON, err := json.MarshalIndent(feedbacks, "", "  ")
 		if err != nil {
 			http.Error(w, "Failed to encode feedback data", http.StatusInternalServerError)
 			fmt.Printf("\033[31m[ERROR] Failed to encode feedback data: %v\033[0m\n", err)

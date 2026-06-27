@@ -39,11 +39,6 @@
 </html>
 
 <script>
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-        alert('此網站無法在行動裝置上使用，請使用電腦瀏覽器訪問。');
-        window.location.href = 'https://www.csjhs.ntpc.edu.tw/';
-    }
-
     fetch('/api/news')
         .then(response => response.json())
         .then(data => {

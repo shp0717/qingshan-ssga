@@ -1,76 +1,71 @@
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 body {
+    position: relative;
     font-family: Arial, sans-serif;
     background-color: #fff;
     color: #114514;
     padding: 0;
     margin: 0;
     animation: fadeIn 0.7s ease-out forwards;
+}
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
+@font-face {
+    font-family: "Title-Font";
+    src: url("/static/fonts/title-font.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
 }
 
 header {
-    height: 80px;
-    position: relative;
+    z-index: 67;
+    height: 75px;
+    top: 0;
     display: flex;
     overflow: hidden;
+    position: sticky;
+    width: 100%;
     h1 {
         font-size: 48px;
         margin: 0 auto;
         align-content: center;
         text-align: center;
         font-family: "Title-Font", sans-serif;
-
-        @font-face {
-            font-family: "Title-Font";
-            src: url("/static/fonts/title-font.woff2") format("woff2");
-            font-weight: normal;
-            font-style: normal;
-        }
     }
     .logo {
-        width: 150px;
-        height: auto;
         position: absolute;
-        z-index: 67;
+        height: 75px;
+        width: 150px;
+        z-index: 66;
     }
 }
 
 .navbar {
+    z-index: 67;
     display: flex;
+    position: sticky;
+    top: 75px;
+    width: 100%;
     a {
+        position: relative;
         flex: 1;
         text-align: center;
         color: white;
         text-decoration: none;
         padding: 8px 16px;
         background-color: #114514;
-        transition: background-color 0.3s, border-color 0.3s;
+        box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
         &:hover {
-            background-color: #1a5;
-            &::after {
-                opacity: 1;
-                clip-path: inset(0 0 0 0);
-            }
-        }
-        &::before {
-            content: '▼';
-            opacity: 0;
-            margin-right: 5px;
-        }
-        &::after {
-            content: '▼';
-            opacity: 0;
-            margin-left: 5px;
-            clip-path: inset(0 0 100% 0);
-            transition: opacity 0.3s, clip-path 1s;
+            box-shadow: 0 0 4px 4px rgba(0, 0, 0, 0.5);
+            background-color: #228a28;
         }
     }
 }

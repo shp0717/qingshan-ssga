@@ -1,7 +1,7 @@
 .content div {
     display: flex;
     padding: 10px;
-    margin-top: 20px;
+    margin: 20px;
     .item {
         background-color: #114514;
         color: white;
@@ -14,12 +14,14 @@
         text-align: center;
 
         text-decoration: none;
-        transition: background-color 0.3s, transform 0.3s;
+        transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
         border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
         &:hover {
-            background-color: #1a5;
+            background-color: #228a28;
             transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.5);
         }
 
         h2 {

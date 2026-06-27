@@ -1,16 +1,15 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 var PagesDir = filepath.Join(execDir, "pages")
+var DataDir = filepath.Join(execDir, "data")
 
 func StaticFiles() {
 	dir := filepath.Join(execDir, "static")
@@ -21,28 +20,33 @@ func StaticFiles() {
 
 func HandleRequests(addr string) {
 	// handle pages
-	http.HandleFunc("/", HomePageHandler)
-	http.HandleFunc("/news", NewsListPageHandler)
-	http.HandleFunc("/news/", NewsPageHandler)
-	http.HandleFunc("/events", EventsListPageHandler)
-	http.HandleFunc("/events/", EventPageHandler)
-	http.HandleFunc("/feedback", FeedbackPageHandler)
-	http.HandleFunc("/feedback/new", NewFeedbackPageHandler)
+	http.HandleFunc("GET /{$}", HomePageHandler)
+	http.HandleFunc("GET /news", NewsListPageHandler)
+	http.HandleFunc("GET /news/{id}", NewsPageHandler)
+	http.HandleFunc("GET /events", EventsListPageHandler)
+	http.HandleFunc("GET /events/{id}", EventPageHandler)
+	http.HandleFunc("GET /feedback", FeedbackPageHandler)
+	http.HandleFunc("GET /feedback/new", NewFeedbackPageHandler)
 	http.HandleFunc("GET /feedback/view", ViewFeedbackPageHandler)
-	http.HandleFunc("/about", AboutPageHandler)
-	http.HandleFunc("/contact", ContactPageHandler)
-	http.HandleFunc("/secret", SecretPageHandler)
+	http.HandleFunc("GET /about", AboutPageHandler)
+	http.HandleFunc("GET /contact", ContactPageHandler)
+	http.HandleFunc("GET /secret", SecretPageHandler)
 
 	// handle API
 	http.HandleFunc("/api/", ApiNotFoundHandler) // catch-all for undefined API routes
-	http.HandleFunc("/api/news", NewsApiHandler)
-	http.HandleFunc("/api/events", EventsApiHandler)
-	http.HandleFunc("/api/feedbacks", GetFeedbacksHandler)
+	http.HandleFunc("GET /api/news", NewsApiHandler)
+	http.HandleFunc("GET /api/events", EventsApiHandler)
+	http.HandleFunc("GET /api/feedbacks", GetFeedbacksHandler)
 	http.HandleFunc("POST /api/post-feedback", PostFeedbackHandler)
 	http.HandleFunc("POST /api/post-reply", AddReplyHandler)
 	http.HandleFunc("POST /api/vErIfYsEcReTpAsSwOrD", VerifySecretPasswordHandler)
 	http.HandleFunc("POST /api/secret-cmd", SecretCommandHandler)
+
 	// handle 404 for any other routes
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		renderNotFoundPage(w, r.URL.Path)
+	})
+
 	fmt.Printf("[INFO] Server starting on %s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
@@ -75,12 +79,21 @@ func renderFile(w http.ResponseWriter, filePathRel string) {
 	fmt.Printf("[INFO] File served: %s\n", filePath)
 }
 
-func HomePageHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		renderNotFoundPage(w, r.URL.Path)
+func renderDataPage(w http.ResponseWriter, filePathRel string) {
+	filePath := filepath.Join(DataDir, "pages", filePathRel)
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		http.Error(w, "Could not load page", http.StatusInternalServerError)
+		fmt.Printf("\033[31m[ERROR] Failed to read data file %s: %v\033[0m\n", filePath, err)
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/html")
+	w.Write(content)
+	fmt.Printf("[INFO] Data file served: %s\n", filePath)
+}
+
+func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	renderFile(w, "home.html")
 }
 
@@ -93,51 +106,13 @@ func EventsListPageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewsPageHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("[INFO] News page requested: %s\n", r.URL.Path)
-	if r.URL.Path == "/news/" {
-		http.Redirect(w, r, "/news", http.StatusMovedPermanently)
-		return
-	}
-	id := strings.TrimPrefix(r.URL.Path, "/news/")
-	content, err := os.ReadFile(filepath.Join(execDir, "data", "pages", fmt.Sprintf("news-%s.html", id)))
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			renderNotFoundPage(w, r.URL.Path)
-			return
-		}
-
-		http.Error(w, "Could not load page", http.StatusInternalServerError)
-		fmt.Printf("\033[31m[ERROR] Failed to read news page %s: %v\033[0m\n", id, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html")
-	w.Write(content)
-	fmt.Printf("[INFO] News page accessed: %s\n", id)
+	id := r.PathValue("id")
+	renderDataPage(w, fmt.Sprintf("news-%s.html", id))
 }
 
 func EventPageHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("[INFO] Event page requested: %s\n", r.URL.Path)
-	if r.URL.Path == "/events/" {
-		http.Redirect(w, r, "/events", http.StatusMovedPermanently)
-		return
-	}
-	id := strings.TrimPrefix(r.URL.Path, "/events/")
-	content, err := os.ReadFile(filepath.Join(execDir, "data", "pages", fmt.Sprintf("event-%s.html", id)))
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			renderNotFoundPage(w, r.URL.Path)
-			return
-		}
-
-		http.Error(w, "Could not load page", http.StatusInternalServerError)
-		fmt.Printf("\033[31m[ERROR] Failed to read event page %s: %v\033[0m\n", id, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html")
-	w.Write(content)
-	fmt.Printf("[INFO] Event page accessed: %s\n", id)
+	id := r.PathValue("id")
+	renderDataPage(w, fmt.Sprintf("event-%s.html", id))
 }
 
 func FeedbackPageHandler(w http.ResponseWriter, r *http.Request) {
