@@ -33,19 +33,27 @@ header {
     position: sticky;
     width: 100%;
     h1 {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        white-space: nowrap;
         line-height: 75px;
         font-weight: 500;
-        font-size: 60px;
         text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        letter-spacing: 15px;
-        margin: 0 auto;
         font-family: "Title-Font", sans-serif;
+        font-size: 0;
+        letter-spacing: 0;
+        &::after {
+            font-size: 60px;
+            letter-spacing: 15px;
+            content: "青山自治會";
+        }
     }
     .logo {
         position: absolute;
         height: 75px;
         width: 150px;
-        z-index: 66;
     }
 }
 
@@ -57,7 +65,6 @@ header {
     width: 100%;
     a {
         font-weight: 300;
-        position: relative;
         flex: 1;
         text-align: center;
         color: white;
@@ -71,5 +78,23 @@ header {
             background-color: #228a28;
             font-weight: 400;
         }
+        span {
+            display: inline;
+        }
+    }
+}
+
+@media(max-width:700px){
+    header .logo {
+        display: none;
+    }
+    .navbar a span {
+        display: block;
+    }
+}
+
+@media(min-width:1050px){
+    header h1::after {
+        content: "青山國中小學生自治會";
     }
 }
