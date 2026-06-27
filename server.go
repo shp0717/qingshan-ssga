@@ -141,8 +141,36 @@ func SecretPageHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	StaticFiles()
+
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
+
+	if len(os.Args) > 1 {
+		for i := 1; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			switch arg {
+			case "-h", "-host", "--host":
+				if i+1 < len(os.Args) {
+					host = os.Args[i+1]
+					i++
+				} else {
+					fmt.Println("[ERROR] Missing value for host argument")
+					os.Exit(1)
+				}
+			case "-p", "-port", "--port":
+				if i+1 < len(os.Args) {
+					port = os.Args[i+1]
+					i++
+				} else {
+					fmt.Println("[ERROR] Missing value for port argument")
+					os.Exit(1)
+				}
+			default:
+				fmt.Printf("\033[33m[WARN] Unknown argument: %s\033[0m\n", arg)
+			}
+		}
+	}
+
 	if host == "" {
 		host = "0.0.0.0"
 	}
