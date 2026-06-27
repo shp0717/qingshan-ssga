@@ -29,15 +29,16 @@ header {
     background-color: #fff;
     height: 75px;
     top: 0;
-    display: flex;
     overflow: hidden;
     position: sticky;
     width: 100%;
     h1 {
-        font-size: 48px;
+        line-height: 75px;
+        font-weight: 500;
+        font-size: 60px;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        letter-spacing: 15px;
         margin: 0 auto;
-        align-content: center;
-        text-align: center;
         font-family: "Title-Font", sans-serif;
     }
     .logo {
@@ -55,6 +56,7 @@ header {
     top: 75px;
     width: 100%;
     a {
+        font-weight: 300;
         position: relative;
         flex: 1;
         text-align: center;
@@ -63,10 +65,11 @@ header {
         padding: 8px 16px;
         background-color: #114514;
         box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s, box-shadow 0.3s;
+        transition: background-color 0.3s, box-shadow 0.3s, font-weight 0.3s;
         &:hover {
             box-shadow: 0 0 4px 4px rgba(0, 0, 0, 0.5);
             background-color: #228a28;
+            font-weight: 400;
         }
     }
 }
