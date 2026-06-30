@@ -16,7 +16,16 @@ var execDir = func() string {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get executable path: %v", err))
 	}
-	return filepath.Dir(exec)
+	dir := filepath.Dir(exec)
+	workingDir, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get working directory: %v", err))
+	}
+	relPath, err := filepath.Rel(workingDir, dir)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get relative path: %v", err))
+	}
+	return relPath
 }()
 
 var feedbackFilePath = filepath.Join(execDir, "data", "feedbacks.json")
@@ -116,7 +125,7 @@ func NewsApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(newsData)
-	fmt.Println("[INFO] News API accessed")
+	fmt.Println("[INFO] API accessed: news")
 }
 
 func EventsApiHandler(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +140,7 @@ func EventsApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(eventData)
-	fmt.Println("[INFO] Event API accessed")
+	fmt.Println("[INFO] API accessed: events")
 }
 
 func PostFeedbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +212,7 @@ func PostFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Printf("[INFO] Feedback received and saved from IP: %s\n", ip)
+	fmt.Printf("[INFO] API accessed: feedback received and saved from IP: %s\n", ip)
 }
 
 func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
@@ -270,7 +279,7 @@ func AddReplyHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.WriteHeader(http.StatusOK)
-			fmt.Printf("[INFO] Reply added to feedback from IP: %s\n", ip)
+			fmt.Printf("[INFO] API accessed: reply added to feedback from IP: %s\n", ip)
 			return
 		}
 	}
@@ -295,7 +304,7 @@ func GetFeedbacksHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(feedbacksJSON)
-	fmt.Println("[INFO] Feedbacks API accessed")
+	fmt.Println("[INFO] API accessed: feedbacks")
 }
 
 func verifySecretPassword(password string) bool {
@@ -319,10 +328,10 @@ func VerifySecretPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	if verifySecretPassword(request.Password) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true}`))
-		fmt.Println("[INFO] Secret password verified successfully")
+		fmt.Println("[INFO] API accessed: secret password verified successfully")
 	} else {
 		http.Error(w, "Incorrect password", http.StatusUnauthorized)
-		fmt.Println("\033[31m[ERROR] Incorrect secret password attempt\033[0m")
+		fmt.Println("\033[31m[ERROR] API accessed: incorrect secret password attempt\033[0m")
 	}
 }
 
@@ -398,7 +407,7 @@ func SecretCommandHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Println("[INFO] Feedback deleted successfully")
+		fmt.Println("[INFO] API accessed: feedback deleted successfully")
 	case "delete_reply":
 		feedbackIDStr, exists := request["feedback_id"]
 		if !exists {
@@ -462,9 +471,9 @@ func SecretCommandHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Println("[INFO] Reply deleted successfully")
+		fmt.Println("[INFO] API accessed: reply deleted successfully")
 	default:
 		http.Error(w, "Unknown command", http.StatusBadRequest)
-		fmt.Printf("\033[31m[ERROR] Unknown secret command: %s\033[0m\n", command)
+		fmt.Printf("\033[31m[ERROR] API accessed: unknown secret command: %s\033[0m\n", command)
 	}
 }

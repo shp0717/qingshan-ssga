@@ -32,6 +32,7 @@ func HandleRequests(addr string) {
 	http.HandleFunc("GET /feedback/view", ViewFeedbackPageHandler)
 	http.HandleFunc("GET /about", AboutPageHandler)
 	http.HandleFunc("GET /contact", ContactPageHandler)
+	http.HandleFunc("GET /credits", CreditsPageHandler)
 	http.HandleFunc("GET /secret", SecretPageHandler)
 
 	// handle API
@@ -139,6 +140,10 @@ func AboutPageHandler(w http.ResponseWriter, r *http.Request) {
 
 func ContactPageHandler(w http.ResponseWriter, r *http.Request) {
 	renderFile(w, "contact.html")
+}
+
+func CreditsPageHandler(w http.ResponseWriter, r *http.Request) {
+	renderFile(w, "credits.html")
 }
 
 func SecretPageHandler(w http.ResponseWriter, r *http.Request) {

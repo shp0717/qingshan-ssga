@@ -1,4 +1,4 @@
-.content div:not(.credits) {
+.content div:not(.copyright) {
     display: flex;
     padding: 10px;
     margin: 20px;
@@ -46,7 +46,7 @@
 
 }
 
-.content .credits {
+.content .copyright {
     box-sizing: border-box;
     position: absolute;
     padding: 10px;
