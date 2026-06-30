@@ -50,11 +50,6 @@ header {
             content: "青山自治會";
         }
     }
-    .logo {
-        position: absolute;
-        height: 75px;
-        width: 150px;
-    }
 }
 
 .navbar {
@@ -84,16 +79,12 @@ header {
     }
 }
 @media (max-width: 700px) {
-    header .logo {
-        display: none;
-    }
-
     .navbar a span {
         display: block;
     }
 }
 
-@media (min-width: 1050px) {
+@media (min-width: 750px) {
     header h1::after {
         content: "青山國中小學生自治會";
     }
